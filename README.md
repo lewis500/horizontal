@@ -1,3 +1,3 @@
-# React Boilerplate
+# Horizontal curves visualization
 
-A folder to start my visualization projects with React, Redux, Webpack, FlowType and SASS.
+run ```yarn dev``` to start the program
