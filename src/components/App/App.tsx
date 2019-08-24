@@ -1,13 +1,24 @@
-import React, { FunctionComponent, useContext, useReducer } from "react";
+import React, {
+  FunctionComponent,
+  useContext,
+  useReducer,
+  useCallback
+} from "react";
 import Button from "@material-ui/core/Button";
 import { colors } from "@material-ui/core";
 import Paper from "@material-ui/core/Paper";
 import useTimer from "src/useTimerHook";
 import Vis from "src/components/Vis";
-import { params } from "src/constants";
+import * as params from "src/constants";
 import { makeStyles } from "@material-ui/styles";
 import { AppContext, reducer, initialState } from "src/ducks";
 import Sliders from "src/components/Sliders";
+import { create } from "jss";
+import { StylesProvider, jssPreset } from "@material-ui/styles";
+import extender from "jss-plugin-extend";
+const jss = create({
+  plugins: [...jssPreset().plugins, extender()]
+});
 
 const useStyles = makeStyles({
   "@global": {
@@ -41,8 +52,8 @@ const useStyles = makeStyles({
   },
   visContainer: {
     margin: "0 auto",
-    width: "800px",
-    height: "200px"
+    width: params.px.width,
+    height: params.px.height
   },
   sliderContainer: {
     width: "300px",
@@ -54,18 +65,21 @@ const useStyles = makeStyles({
 const EMPTY = {};
 const App: FunctionComponent<{}> = () => {
   const { state, dispatch } = useContext(AppContext);
-  const { x, l, g1, g2, play } = state;
+  // const { x, l, g1, g2, play } = state;
 
   const classes = useStyles(EMPTY);
+  // let cb = useCallback(()=>{
 
-  useTimer((dt: number) => {
-    dt /= params.delta;
-    if (x < params.total && state.v > 0) {
-      dispatch({ type: "TICK", payload: dt });
-    } else {
-      dispatch({ type: "RESTART" });
-    }
-  }, play);
+  // },[dispatch])
+
+  // useTimer((dt: number) => {
+  //   dt /= params.delta;
+  //   if (x < params.total && state.v > 0) {
+  //     dispatch({ type: "TICK", payload: dt });
+  //   } else {
+  //     dispatch({ type: "RESTART" });
+  //   }
+  // }, play);
 
   return (
     <div className={classes.main}>
@@ -74,7 +88,7 @@ const App: FunctionComponent<{}> = () => {
       </div>
       <Paper className={classes.paper} elevation={2}>
         <Sliders />
-        <Button
+        {/* <Button
           className={classes.button}
           variant="contained"
           color="secondary"
@@ -92,13 +106,13 @@ const App: FunctionComponent<{}> = () => {
           }}
         >
           Reset
-        </Button>
+        </Button> */}
       </Paper>
     </div>
   );
 };
 
-export default () => {
+const AppWithReducer = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   return (
@@ -107,3 +121,9 @@ export default () => {
     </AppContext.Provider>
   );
 };
+
+export default () => (
+  <StylesProvider jss={jss}>
+    <AppWithReducer />
+  </StylesProvider>
+);

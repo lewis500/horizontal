@@ -1,20 +1,9 @@
-const total = 120,
-blockX = total*.7;
-
-export const params = {
-  a: 3.4,
-  v0: 18,
-  v0Max: 21,
-  delta: 0.7,
-  tp: 0.75,
-  total,
-  car: {
-    height: 1,
-    width: 2
-  },
-  block: {
-    x: blockX,
-    width: 1,
-    height: 1
-  }
-};
+export const a = 3.4;
+export const v0 = 18;
+export const v0Max = 21;
+export const delta = 0.75;
+export const W = 120;
+export const H = 120;
+export const y0 = (W) / 2;
+export const car = { length: 2, width: 1 };
+export const px = {height: 400,width:400};

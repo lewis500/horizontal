@@ -1,12 +1,13 @@
-import React, { useContext } from "react";
+import React, { useContext, useCallback, useMemo } from "react";
 import { withStyles, Theme } from "@material-ui/core/styles";
-import { AppContext } from "src/ducks";
-import Slider from "@material-ui/core/Slider";
+import { AppContext, ActionTypes } from "src/ducks";
+import Slider, { SliderProps } from "@material-ui/core/Slider";
 import { Typography as Text, colors } from "@material-ui/core";
 import makeStyles from "@material-ui/styles/makeStyles";
 import TeX from "@matejmazur/react-katex";
-import { params } from "src/constants";
+import * as params from "src/constants";
 import "katex/dist/katex.min.css";
+import { createSelector } from "reselect";
 
 const StyleSlider = withStyles((theme: Theme) => ({
   root: {
@@ -15,56 +16,40 @@ const StyleSlider = withStyles((theme: Theme) => ({
   }
 }))(Slider);
 
-const v0Text = (
-    <Text variant="body1">
-      <TeX math="v_0" /> (initial speed)
-    </Text>
-  ),
-  g1Text = (
-    <Text variant="body1">
-      <TeX math="g_1" /> (initial grade)
-    </Text>
-  ),
-  g2Text = (
-    <Text variant="body1">
-      <TeX math="g_2" /> (final grade)
-    </Text>
-  ),
-  lText = (
-    <Text variant="body1">
-      <TeX math="l" /> (curve length)
-    </Text>
-  ),
-  xText = (
-    <Text variant="body1">
-      <TeX math="x" /> (car position)
-    </Text>
-  );
-
 export default () => {
   const { state, dispatch } = useContext(AppContext);
-  const { l, v0, g1, g2, x } = state;
+  const cbs = useMemo(
+    () =>
+      ({
+        setΔ: (e, payload) => dispatch({ type: ActionTypes.SET_Δ, payload }),
+        setR: (e, payload) => dispatch({ type: ActionTypes.SET_R, payload })
+      } as { [key: string]: (e: React.ChangeEvent<{}>, v: number) => void }),
+    []
+  );
+  // const { l, v0, g1, g2, x } = state;
   return (
     <>
-      {xText}
-      <StyleSlider
-        onChange={(e, payload: number) => dispatch({ type: "SET_X", payload })}
-        value={x}
-        step={0.25}
-        min={0}
-        max={params.total}
-      />
       <Text variant="body1">
-        <TeX math="v_0" /> (initial speed)
+        <TeX math="\Delta" /> angle
       </Text>
       <StyleSlider
-        onChange={(e, payload: number) => dispatch({ type: "SET_V0", payload })}
-        value={v0}
-        step={0.02}
+        onChange={cbs.setΔ}
+        value={state.Δ}
+        step={1}
         min={0}
-        max={params.v0Max}
+        max={75}
       />
-      {g1Text}
+      <Text variant="body1">
+        <TeX math="R" /> radius
+      </Text>
+      <StyleSlider
+        onChange={cbs.setR}
+        value={state.R}
+        step={1}
+        min={20}
+        max={90}
+      />
+      {/* {g1Text}
       <StyleSlider
         onChange={(e, payload: number) => dispatch({ type: "SET_G1", payload })}
         value={g1}
@@ -87,7 +72,7 @@ export default () => {
         step={1}
         min={0}
         max={params.total}
-      />
+      /> */}
     </>
   );
 };
