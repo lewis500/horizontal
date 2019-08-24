@@ -1,64 +1,50 @@
 import React, {
-  createElement as CE,
-  FunctionComponent,
   useContext,
   useRef,
-  useMemo
 } from "react";
-import * as params from "src/constants";
-import mo from "memoize-one";
 import * as ducks from "src/ducks";
-import clsx from "clsx";
 import useElementSize from "src/useElementSizeHook";
 import makeStyles from "@material-ui/styles/makeStyles";
 import * as colors from "@material-ui/core/colors";
-import range from "lodash.range";
 
-const EMPTY = {},
-  M = {
-    top: 20,
-    bottom: 20,
-    left: 20,
-    right: 10
-  },
-  gTranslate = `translate(${M.left},${M.top})`,
-  marginer = ({ width, height }: { width: number; height: number }) => ({
-    width: Math.max(width - M.left - M.right, 0),
-    height: Math.max(height - M.top - M.bottom, 0)
-  });
-
-// const RoadPath = ({xScale,yScale})
-
+const EMPTY = {};
 export default () => {
   const { state } = useContext(ducks.AppContext),
     classes = useStyles(EMPTY),
     containerRef = useRef<HTMLDivElement>(),
-    { width, height } = marginer(useElementSize(containerRef));
+    { width, height } = useElementSize(containerRef);
 
   return (
     <div ref={containerRef} className={classes.container}>
       <svg className={classes.svg}>
-        <g transform={gTranslate}>
-          <circle
-            r={ducks.getRoadPoints(state, { width, height }).r}
-            cx={ducks.getRoadPoints(state, { width, height }).center[0]}
-            cy={ducks.getRoadPoints(state, { width, height }).center[1]}
-            className={classes.circle}
-          />
-          <path
-            d={ducks.getHinge(state, { width, height })}
-            className={classes.hinge}
-          />
-          <path
-            d={ducks.getRoadSides(state, { width, height })}
-            className={classes.sides}
-          />
-
-          <path
-            d={ducks.getRoadArc(state, { width, height })}
-            className={classes.arc}
-          />
-        </g>
+        <circle
+          r={ducks.getRoadPoints(state, { width, height }).r}
+          cx={ducks.getRoadPoints(state, { width, height }).center[0]}
+          cy={ducks.getRoadPoints(state, { width, height }).center[1]}
+          className={classes.circle}
+        />
+        <path
+          d={ducks.getHinge(state, { width, height })}
+          className={classes.hinge}
+        />
+        <path
+          d={ducks.getRoadSides(state, { width, height })}
+          className={classes.sides}
+        />
+        <path
+          d={ducks.getRoadArc(state, { width, height })}
+          className={classes.arc}
+        />
+        <rect
+          className={classes.car}
+          width={6}
+          height={4}
+          transform={`translate(${
+            ducks.getCar(state, { width, height }).loc
+          }) rotate(${
+            ducks.getCar(state, { width, height }).rotate
+          }) translate(${-6},${-2})`}
+        />
       </svg>
     </div>
   );
@@ -67,7 +53,7 @@ export default () => {
 const useStyles = makeStyles({
   laser: {
     fill: "none",
-    "stroke-width": "4px",
+    "stroke-width": 6,
     "stroke-linecap": "round"
   },
   sides: {
@@ -76,7 +62,7 @@ const useStyles = makeStyles({
   },
   arc: {
     extend: "laser",
-    stroke: colors.lightBlue["A700"]
+    stroke: colors.lightBlue["700"]
   },
   circle: {
     extend: "laser",
@@ -121,7 +107,10 @@ const useStyles = makeStyles({
     fontFamily: "Puritan, sans-serif"
   },
   car: {
-    fill: colors.purple["A400"]
+    fill: colors.purple["200"],
+    stroke: "white",
+    rx: 1,
+    ry: 1
   },
   block: {
     fill: colors.green["A700"]

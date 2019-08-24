@@ -51,7 +51,7 @@ const useStyles = makeStyles({
     alignSelf: "center"
   },
   visContainer: {
-    margin: "0 auto",
+    margin: "10px auto",
     width: params.px.width,
     height: params.px.height
   },

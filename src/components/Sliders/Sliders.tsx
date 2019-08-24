@@ -22,7 +22,8 @@ export default () => {
     () =>
       ({
         setΔ: (e, payload) => dispatch({ type: ActionTypes.SET_Δ, payload }),
-        setR: (e, payload) => dispatch({ type: ActionTypes.SET_R, payload })
+        setR: (e, payload) => dispatch({ type: ActionTypes.SET_R, payload }),
+        setX: (e, payload) => dispatch({ type: ActionTypes.SET_X, payload })
       } as { [key: string]: (e: React.ChangeEvent<{}>, v: number) => void }),
     []
   );
@@ -48,6 +49,16 @@ export default () => {
         step={1}
         min={20}
         max={90}
+      />
+      <Text variant="body1">
+        <TeX math="x" /> radius
+      </Text>
+      <StyleSlider
+        onChange={cbs.setX}
+        value={state.x}
+        step={1}
+        min={0}
+        max={params.W * 1.4}
       />
       {/* {g1Text}
       <StyleSlider

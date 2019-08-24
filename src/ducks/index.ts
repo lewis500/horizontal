@@ -10,7 +10,7 @@ type NN = number;
 
 export const initialState = {
   play: false,
-  x: 20,
+  x: 40,
   v: 18,
   v0: 18,
   time: 0,
@@ -26,7 +26,8 @@ export enum ActionTypes {
   SET_PLAY = "SET_PLAY",
   RESET = "RESET",
   RESTART = "RESTART",
-  SET_Δ = "SET_Δ"
+  SET_Δ = "SET_Δ",
+  SET_X = "SET_X"
 }
 
 export type State = typeof initialState;
@@ -37,6 +38,7 @@ type Action =
       payload: NN;
     }
   | { type: ActionTypes.SET_V0; payload: NN }
+  | { type: ActionTypes.SET_X; payload: NN }
   | { type: ActionTypes.SET_Δ; payload: NN }
   | { type: ActionTypes.SET_R; payload: NN }
   | { type: ActionTypes.RESTART }
@@ -59,6 +61,11 @@ export const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         Δ: action.payload
+      };
+    case ActionTypes.SET_X:
+      return {
+        ...state,
+        x: action.payload
       };
     case ActionTypes.SET_PLAY:
       return {
@@ -95,11 +102,13 @@ export const reducer = (state: State, action: Action): State => {
   }
 };
 
-export const getΔRad = CS<State, NN, NN>([get("Δ")], Δ => (Δ / 180) * Math.PI);
-
-export const getChord = CS<State, NN, NN, NN>(
-    [get("R"), getΔRad],
-    (R, Δ) => 2 * R * Math.sin(Δ / 2)
+export const getΔ2Rad = CS<State, NN, NN>(
+    [get("Δ")],
+    Δ => ((Δ / 180) * Math.PI) / 2
+  ),
+  getChord = CS<State, NN, NN, NN>(
+    [get("R"), getΔ2Rad],
+    (R, Δ2) => 2 * R * Math.sin(Δ2)
   ),
   getXScale = CS<
     State,
@@ -119,22 +128,34 @@ export const getChord = CS<State, NN, NN, NN>(
     ScaleLinear<number, number>
   >([(_, props) => props.height, (_, props) => props.width], (height, width) =>
     scaleLinear()
-      .domain([0, (params.W * height) / width || 5])
+      .domain([-params.y0, ((params.W - params.y0) * height) / width || 5])
       .range([height, 0])
   ),
+  getRoadPointsRaw = CS([getΔ2Rad, get("R")], (Δ2, R) => {
+    let chord = 2 * R * Math.sin(Δ2);
+    let side = (params.W - chord) / 2;
+    let yKink = Math.tan(Δ2) * side;
+    return {
+      a: [0, 0],
+      b: [side, yKink],
+      c: [side + chord, yKink],
+      d: [params.W, 0],
+      r: R,
+      center: [params.W / 2, yKink - Math.cos(Δ2) * R],
+      side
+    };
+  }),
   getRoadPoints = CS(
-    [getΔRad, get("R"), getXScale, getYScale],
-    (Δ, R, xScale, yScale) => {
-      let chord = 2 * R * Math.sin(Δ / 2);
-      let side = (params.W - chord) / 2;
-      let yKink = yScale(params.y0 + Math.tan(Δ / 2) * side);
+    [getRoadPointsRaw, getXScale, getYScale],
+    ({ a, b, c, d, r, center }, xScale, yScale) => {
+      const cp = ([m, n]: number[]) => [xScale(m), yScale(n)];
       return {
-        a: [0, yScale(params.y0)],
-        b: [xScale(side), yKink],
-        c: [xScale(side + chord), yKink],
-        d: [xScale(params.W), yScale(params.y0)],
-        r: xScale(R),
-        center: [xScale(side + chord / 2), yKink + xScale(Math.cos(Δ / 2) * R)]
+        a: cp(a),
+        b: cp(b),
+        c: cp(c),
+        d: cp(d),
+        r: xScale(r),
+        center: cp(center)
       };
     }
   ),
@@ -149,8 +170,35 @@ export const getChord = CS<State, NN, NN, NN>(
   getHinge = CS(
     [getRoadPoints],
     ({ a, b, c, d, center }) => "M" + b + "L" + center + "L" + c
+  ),
+  getCar = CS(
+    [get("x"), getΔ2Rad, getChord, getRoadPointsRaw, getXScale, getYScale],
+    (x, Δ2, chord, rp, xScale, yScale) => {
+      const sideLength = rp.side / Math.cos(Δ2);
+      if (x < sideLength)
+        return {
+          loc: [xScale(x * Math.cos(Δ2)), yScale(x * Math.sin(Δ2))],
+          rotate: (-Δ2 / Math.PI) * 180
+        };
+      const arcLength = rp.r * Δ2 * 2;
+      if (x - sideLength < arcLength) {
+        const δ = (x - sideLength) / rp.r - Δ2;
+        return {
+          loc: [
+            xScale(rp.center[0] + rp.r * Math.sin(δ)),
+            yScale(rp.center[1] + rp.r * Math.cos(δ))
+          ],
+          rotate: (δ / Math.PI) * 180
+        };
+      }
+      let total = 2 * sideLength + arcLength;
+      x = total - x;
+      return {
+        loc: [xScale(params.W - x * Math.cos(Δ2)), yScale(x * Math.sin(Δ2))],
+        rotate: (Δ2 / Math.PI) * 180
+      };
+    }
   );
-// getCircleParams = CS(getRoadPoints,({center:[cx,cy],r}))
 
 export const AppContext = React.createContext<{
   state: State;
