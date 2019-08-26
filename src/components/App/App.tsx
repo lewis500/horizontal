@@ -11,7 +11,13 @@ import useTimer from "src/useTimerHook";
 import Vis from "src/components/Vis";
 import * as params from "src/constants";
 import { makeStyles } from "@material-ui/styles";
-import { AppContext, reducer, initialState } from "src/ducks";
+import {
+  AppContext,
+  reducer,
+  initialState,
+  ActionTypes,
+  getTotal
+} from "src/ducks";
 import Sliders from "src/components/Sliders";
 import { create } from "jss";
 import { StylesProvider, jssPreset } from "@material-ui/styles";
@@ -48,7 +54,10 @@ const useStyles = makeStyles({
     flexDirection: "column"
   },
   button: {
-    alignSelf: "center"
+    alignSelf: "center",
+    "&:not(:last-child)": {
+      marginBottom: 10
+    }
   },
   visContainer: {
     margin: "10px auto",
@@ -64,22 +73,15 @@ const useStyles = makeStyles({
 
 const EMPTY = {};
 const App: FunctionComponent<{}> = () => {
-  const { state, dispatch } = useContext(AppContext);
-  // const { x, l, g1, g2, play } = state;
+  const { state, dispatch } = useContext(AppContext),
+    classes = useStyles(EMPTY);
 
-  const classes = useStyles(EMPTY);
-  // let cb = useCallback(()=>{
-
-  // },[dispatch])
-
-  // useTimer((dt: number) => {
-  //   dt /= params.delta;
-  //   if (x < params.total && state.v > 0) {
-  //     dispatch({ type: "TICK", payload: dt });
-  //   } else {
-  //     dispatch({ type: "RESTART" });
-  //   }
-  // }, play);
+  useTimer((dt: number) => {
+    dt /= params.delta;
+    if (state.x < getTotal(state) && state.v > 0)
+      dispatch({ type: ActionTypes.TICK, payload: dt });
+    else dispatch({ type: ActionTypes.RESTART });
+  }, state.play);
 
   return (
     <div className={classes.main}>
@@ -88,25 +90,26 @@ const App: FunctionComponent<{}> = () => {
       </div>
       <Paper className={classes.paper} elevation={2}>
         <Sliders />
-        {/* <Button
+        <Button
           className={classes.button}
           variant="contained"
           color="secondary"
-          onClick={() => dispatch({ type: "SET_PLAY", payload: !play })}
+          onClick={() =>
+            dispatch({ type: ActionTypes.SET_PLAY, payload: !state.play })
+          }
         >
-          {play ? "PAUSE" : "PLAY"}
+          {state.play ? "PAUSE" : "PLAY"}
         </Button>
         <Button
           className={classes.button}
-          style={{ marginTop: "10px" }}
           variant="contained"
           color="secondary"
           onClick={() => {
-            dispatch({ type: "RESET" });
+            dispatch({ type: ActionTypes.RESET });
           }}
         >
           Reset
-        </Button> */}
+        </Button>
       </Paper>
     </div>
   );

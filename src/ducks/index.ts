@@ -14,8 +14,8 @@ export const initialState = {
   v: 18,
   v0: 18,
   time: 0,
-  R: 40,
-  Δ: 30
+  R: 90,
+  Δ: 40
 };
 type Mapper = (v: NN) => NN;
 
@@ -120,16 +120,9 @@ export const getΔ2Rad = CS<State, NN, NN>(
       .domain([0, params.W])
       .range([0, width])
   ),
-  getYScale = CS<
-    State,
-    { width: number; height: number },
-    number,
-    number,
-    ScaleLinear<number, number>
-  >([(_, props) => props.height, (_, props) => props.width], (height, width) =>
-    scaleLinear()
-      .domain([-params.y0, ((params.W - params.y0) * height) / width || 5])
-      .range([height, 0])
+  getYScale = CS(
+    [getXScale, (_, { height }) => height],
+    (xScale, height) => (v: number) => height - xScale(v + params.y0)
   ),
   getRoadPointsRaw = CS([getΔ2Rad, get("R")], (Δ2, R) => {
     let chord = 2 * R * Math.sin(Δ2);
@@ -142,12 +135,13 @@ export const getΔ2Rad = CS<State, NN, NN>(
       d: [params.W, 0],
       r: R,
       center: [params.W / 2, yKink - Math.cos(Δ2) * R],
-      side
+      side,
+      pvi: [params.W / 2, (params.W / 2) * Math.tan(Δ2)]
     };
   }),
   getRoadPoints = CS(
     [getRoadPointsRaw, getXScale, getYScale],
-    ({ a, b, c, d, r, center }, xScale, yScale) => {
+    ({ a, b, c, d, r, center, pvi }, xScale, yScale) => {
       const cp = ([m, n]: number[]) => [xScale(m), yScale(n)];
       return {
         a: cp(a),
@@ -155,7 +149,8 @@ export const getΔ2Rad = CS<State, NN, NN>(
         c: cp(c),
         d: cp(d),
         r: xScale(r),
-        center: cp(center)
+        center: cp(center),
+        pvi: cp(pvi)
       };
     }
   ),
@@ -171,9 +166,17 @@ export const getΔ2Rad = CS<State, NN, NN>(
     [getRoadPoints],
     ({ a, b, c, d, center }) => "M" + b + "L" + center + "L" + c
   ),
+  getTotal = CS(
+    [getΔ2Rad, getRoadPointsRaw],
+    (Δ2, { r, side }) => (2 * side) / Math.cos(Δ2) + r * Δ2 * 2
+  ),
+  getTangents = CS(
+    getRoadPoints,
+    ({ pvi, a, b, c, d }) => "M" + b + "L" + pvi + "L" + c
+  ),
   getCar = CS(
-    [get("x"), getΔ2Rad, getChord, getRoadPointsRaw, getXScale, getYScale],
-    (x, Δ2, chord, rp, xScale, yScale) => {
+    [get("x"), getΔ2Rad, getRoadPointsRaw, getXScale, getYScale],
+    (x, Δ2, rp, xScale, yScale) => {
       const sideLength = rp.side / Math.cos(Δ2);
       if (x < sideLength)
         return {

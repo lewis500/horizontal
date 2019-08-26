@@ -1,50 +1,102 @@
-import React, {
-  useContext,
-  useRef,
-} from "react";
+import React, { useContext, useRef } from "react";
 import * as ducks from "src/ducks";
 import useElementSize from "src/useElementSizeHook";
 import makeStyles from "@material-ui/styles/makeStyles";
 import * as colors from "@material-ui/core/colors";
+import TexLabel from "src/components/TexLabel";
 
 const EMPTY = {};
+
+const makeRLabel = (center: number[], b: number[], r: number, Δ: number) => {
+  return (
+    <>
+      <g
+        transform={`translate(${(b[0] + center[0]) / 2}, ${(b[1] + center[1]) /
+          2}) rotate(${-Δ/2})`}
+      >
+        <circle fill="white" r="12" />
+        <TexLabel x={0} y={0} dx={-6} dy={-11} latexstring="R" />
+      </g>
+    </>
+  );
+};
+
 export default () => {
   const { state } = useContext(ducks.AppContext),
     classes = useStyles(EMPTY),
     containerRef = useRef<HTMLDivElement>(),
-    { width, height } = useElementSize(containerRef);
+    dims = useElementSize(containerRef),
+    rp = ducks.getRoadPoints(state, dims),
+    Δ2 = ducks.getΔ2Rad(state);
 
   return (
     <div ref={containerRef} className={classes.container}>
       <svg className={classes.svg}>
         <circle
-          r={ducks.getRoadPoints(state, { width, height }).r}
-          cx={ducks.getRoadPoints(state, { width, height }).center[0]}
-          cy={ducks.getRoadPoints(state, { width, height }).center[1]}
+          r={rp.r}
+          cx={rp.center[0]}
+          cy={rp.center[1]}
           className={classes.circle}
         />
-        <path
-          d={ducks.getHinge(state, { width, height })}
-          className={classes.hinge}
-        />
-        <path
-          d={ducks.getRoadSides(state, { width, height })}
-          className={classes.sides}
-        />
-        <path
-          d={ducks.getRoadArc(state, { width, height })}
-          className={classes.arc}
-        />
+        <path d={ducks.getHinge(state, dims)} className={classes.hinge} />
+        <path d={ducks.getRoadSides(state, dims)} className={classes.sides} />
+        <path d={ducks.getRoadArc(state, dims)} className={classes.arc} />
+        <path d={ducks.getRoadArc(state, dims)} className={classes.arc} />
+        <path d={ducks.getTangents(state, dims)} className={classes.tangents} />
         <rect
           className={classes.car}
-          width={6}
-          height={4}
-          transform={`translate(${
-            ducks.getCar(state, { width, height }).loc
-          }) rotate(${
-            ducks.getCar(state, { width, height }).rotate
-          }) translate(${-6},${-2})`}
+          width={8}
+          height={5}
+          transform={`translate(${ducks.getCar(state, dims).loc}) rotate(${
+            ducks.getCar(state, dims).rotate
+          }) translate(${-4},${-2.5})`}
         />
+        <TexLabel
+          x={rp.center[0]}
+          y={rp.center[1]}
+          dx={-6}
+          dy={-50}
+          rotate={0}
+          latexstring="\Delta"
+        />
+        <TexLabel
+          x={rp.pvi[0]}
+          y={rp.pvi[1]}
+          dx={-12}
+          dy={-17}
+          rotate={0}
+          latexstring="\text{PVI}"
+        />
+        <TexLabel
+          x={rp.b[0]}
+          y={rp.b[1]}
+          dx={-12}
+          dy={-22}
+          rotate={-state.Δ/2}
+          latexstring="\text{PC}"
+        />
+        <TexLabel
+          x={rp.c[0]}
+          y={rp.c[1]}
+          dx={-12}
+          dy={-22}
+          rotate={state.Δ/2}
+          latexstring="\text{PT}"
+        />
+        <circle cx={rp.pvi[0]} cy={rp.pvi[1]} r="2" className={classes.pvi} />
+        <circle cx={rp.b[0]} cy={rp.b[1]} r="2" className={classes.pvi} />
+        <circle cx={rp.c[0]} cy={rp.c[1]} r="2" className={classes.pvi} />
+        <path
+          d={`M${rp.center[0] + Math.sin(-Δ2) * 30},${rp.center[1] -
+            Math.cos(-Δ2) * 30} A ${30} ${30} 0 0 1 ${rp.center[0] +
+            Math.sin(Δ2) * 30} ${rp.center[1] - Math.cos(Δ2) * 30}
+          `}
+          stroke="black"
+          strokeWidth="1px"
+          fill="none"
+        />
+        {makeRLabel(rp.center, rp.b, rp.r, state.Δ)}
+        {makeRLabel(rp.center, rp.c, rp.r, -state.Δ)}
       </svg>
     </div>
   );
@@ -53,12 +105,23 @@ export default () => {
 const useStyles = makeStyles({
   laser: {
     fill: "none",
-    "stroke-width": 6,
-    "stroke-linecap": "round"
+    "stroke-width": 8,
+    // "stroke-linecap": "round"
   },
   sides: {
     extend: "laser",
-    stroke: colors.grey["800"]
+    stroke: colors.blueGrey["700"],
+    // "stroke-linecap": ""
+  },
+  tangents: {
+    stroke: colors.orange["A200"],
+    strokeWidth: "1px",
+    fill: "none",
+    strokeDasharray: "2,2"
+  },
+  pvi: {
+    stroke: "none",
+    fill: colors.orange["A200"]
   },
   arc: {
     extend: "laser",
@@ -67,7 +130,7 @@ const useStyles = makeStyles({
   circle: {
     extend: "laser",
     strokeWidth: "1px",
-    stroke: colors.pink["A700"],
+    stroke: colors.green["500"],
     strokeDasharray: "2,3"
   },
   hinge: {
@@ -109,8 +172,8 @@ const useStyles = makeStyles({
   car: {
     fill: colors.purple["200"],
     stroke: "white",
-    rx: 1,
-    ry: 1
+    rx: 1.5,
+    ry: 1.5
   },
   block: {
     fill: colors.green["A700"]

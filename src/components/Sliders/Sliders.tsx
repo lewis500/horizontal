@@ -37,7 +37,7 @@ export default () => {
         onChange={cbs.setΔ}
         value={state.Δ}
         step={1}
-        min={0}
+        min={20}
         max={75}
       />
       <Text variant="body1">
@@ -47,16 +47,16 @@ export default () => {
         onChange={cbs.setR}
         value={state.R}
         step={1}
-        min={20}
-        max={90}
+        min={70}
+        max={110}
       />
       <Text variant="body1">
-        <TeX math="x" /> radius
+        <TeX math="x" /> position
       </Text>
       <StyleSlider
         onChange={cbs.setX}
         value={state.x}
-        step={1}
+        step={.25}
         min={0}
         max={params.W * 1.4}
       />
