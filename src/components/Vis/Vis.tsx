@@ -4,7 +4,7 @@ import useElementSize from "src/useElementSizeHook";
 import makeStyles from "@material-ui/styles/makeStyles";
 import * as colors from "@material-ui/core/colors";
 import TexLabel from "src/components/TexLabel";
-
+import clsx from "clsx";
 const EMPTY = {};
 
 const makeRLabel = (center: number[], b: number[], r: number, Δ: number) => {
@@ -12,7 +12,7 @@ const makeRLabel = (center: number[], b: number[], r: number, Δ: number) => {
     <>
       <g
         transform={`translate(${(b[0] + center[0]) / 2}, ${(b[1] + center[1]) /
-          2}) rotate(${-Δ/2})`}
+          2}) rotate(${-Δ / 2})`}
       >
         <circle fill="white" r="12" />
         <TexLabel x={0} y={0} dx={-6} dy={-11} latexstring="R" />
@@ -44,13 +44,38 @@ export default () => {
         <path d={ducks.getRoadArc(state, dims)} className={classes.arc} />
         <path d={ducks.getTangents(state, dims)} className={classes.tangents} />
         <rect
-          className={classes.car}
+          className={clsx(classes.car, { [classes.braking]: state.braking })}
           width={8}
           height={5}
           transform={`translate(${ducks.getCar(state, dims).loc}) rotate(${
             ducks.getCar(state, dims).rotate
           }) translate(${-4},${-2.5})`}
         />
+        <rect
+          className={classes.block}
+          width="20px"
+          height="20px"
+          transform={`translate(${ducks.getBlock(
+            state,
+            dims
+          )}) translate(${-10},${0})`}
+        />
+        <rect
+          className={classes.car}
+          width={8}
+          height={5}
+          transform={`translate(${
+            ducks.getStoppedCar(state, dims).loc
+          }) rotate(${
+            ducks.getStoppedCar(state, dims).rotate
+          }) translate(${4},${-2.5})`}
+        />
+        {/* <rect
+          className={classes.car}
+          width={8}
+          height={5}
+          transform={`translate(${ducks.getStoppedCar(state, dims)}) translate(${-10},${0})`}
+        /> */}
         <TexLabel
           x={rp.center[0]}
           y={rp.center[1]}
@@ -72,7 +97,7 @@ export default () => {
           y={rp.b[1]}
           dx={-12}
           dy={-22}
-          rotate={-state.Δ/2}
+          rotate={-state.Δ / 2}
           latexstring="\text{PC}"
         />
         <TexLabel
@@ -80,7 +105,7 @@ export default () => {
           y={rp.c[1]}
           dx={-12}
           dy={-22}
-          rotate={state.Δ/2}
+          rotate={state.Δ / 2}
           latexstring="\text{PT}"
         />
         <circle cx={rp.pvi[0]} cy={rp.pvi[1]} r="2" className={classes.pvi} />
@@ -105,12 +130,12 @@ export default () => {
 const useStyles = makeStyles({
   laser: {
     fill: "none",
-    "stroke-width": 8,
+    "stroke-width": 8
     // "stroke-linecap": "round"
   },
   sides: {
     extend: "laser",
-    stroke: colors.blueGrey["700"],
+    stroke: colors.blueGrey["700"]
     // "stroke-linecap": ""
   },
   tangents: {
@@ -169,11 +194,20 @@ const useStyles = makeStyles({
     fontSize: "12px",
     fontFamily: "Puritan, sans-serif"
   },
+  // block: {
+  //   fill: colors.green["A400"],
+  //   // stroke: "white",
+  //   rx: 1.5,
+  //   ry: 1.5
+  // },
   car: {
     fill: colors.purple["200"],
     stroke: "white",
     rx: 1.5,
     ry: 1.5
+  },
+  braking: {
+    fill: colors.red["A400"]
   },
   block: {
     fill: colors.green["A700"]

@@ -5,4 +5,4 @@ export const delta = 0.75;
 export const W = 120;
 export const y0 = W * 0.70;
 export const car = { length: 2, width: 1 };
-export const px = { height: 500, width: 400 };
+export const px = { height: 550, width: 500 };
