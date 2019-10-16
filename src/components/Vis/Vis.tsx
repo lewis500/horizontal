@@ -1,5 +1,6 @@
 import React, { useContext, useRef } from "react";
 import * as ducks from "src/ducks";
+import { State } from "src/ducks";
 import useElementSize from "src/useElementSizeHook";
 import makeStyles from "@material-ui/styles/makeStyles";
 import * as colors from "@material-ui/core/colors";
@@ -9,17 +10,20 @@ const EMPTY = {};
 
 const makeRLabel = (center: number[], b: number[], r: number, Δ: number) => {
   return (
-    <>
-      <g
-        transform={`translate(${(b[0] + center[0]) / 2}, ${(b[1] + center[1]) /
-          2}) rotate(${-Δ / 2})`}
-      >
-        <circle fill="white" r="12" />
-        <TexLabel x={0} y={0} dx={-6} dy={-11} latexstring="R" />
-      </g>
-    </>
+    <g
+      transform={`translate(${(b[0] + center[0]) / 2}, ${(b[1] + center[1]) /
+        2}) rotate(${-Δ / 2})`}
+    >
+      <circle fill="white" r="12" />
+      <TexLabel x={0} y={0} dx={-6} dy={-11} latexstring="R" />
+    </g>
   );
 };
+
+// const Block = (state: State, dims: { width: number; height: number, classes:{} }) => (
+//   <g>
+//   </g>
+// );
 
 export default () => {
   const { state } = useContext(ducks.AppContext),
@@ -43,6 +47,7 @@ export default () => {
         <path d={ducks.getRoadArc(state, dims)} className={classes.arc} />
         <path d={ducks.getRoadArc(state, dims)} className={classes.arc} />
         <path d={ducks.getTangents(state, dims)} className={classes.tangents} />
+        <path d={ducks.getBlockPath(state, dims)} className={classes.hinge} />
         <rect
           className={clsx(classes.car, { [classes.braking]: state.braking })}
           width={8}
@@ -55,10 +60,10 @@ export default () => {
           className={classes.block}
           width="20px"
           height="20px"
-          transform={`translate(${ducks.getBlock(
+          transform={`translate(${ducks.getBlockPoints(
             state,
             dims
-          )}) translate(${-10},${0})`}
+          ).block}) translate(${-10},${0})`}
         />
         <rect
           className={classes.car}
@@ -70,12 +75,6 @@ export default () => {
             ducks.getStoppedCar(state, dims).rotate
           }) translate(${4},${-2.5})`}
         />
-        {/* <rect
-          className={classes.car}
-          width={8}
-          height={5}
-          transform={`translate(${ducks.getStoppedCar(state, dims)}) translate(${-10},${0})`}
-        /> */}
         <TexLabel
           x={rp.center[0]}
           y={rp.center[1]}

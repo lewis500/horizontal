@@ -73,6 +73,7 @@ export const getΔ2Rad = CS<State, NN, NN>(
     let chord = 2 * R * Math.sin(Δ2);
     let side = (params.W - chord) / 2;
     let yKink = Math.tan(Δ2) * side;
+    let center = [params.W / 2, yKink - Math.cos(Δ2) * R];
     return {
       yKink,
       a: [0, 0],
@@ -80,14 +81,15 @@ export const getΔ2Rad = CS<State, NN, NN>(
       c: [side + chord, yKink],
       d: [params.W, 0],
       r: R,
-      center: [params.W / 2, yKink - Math.cos(Δ2) * R],
+      center,
       side,
-      pvi: [params.W / 2, (params.W / 2) * Math.tan(Δ2)]
+      pvi: [params.W / 2, (params.W / 2) * Math.tan(Δ2)],
+      centerArc: [params.W / 2, center[1] + R]
     };
   }),
   getRoadPoints = CS(
     [getRoadPointsRaw, getXScale, getYScale],
-    ({ a, b, c, d, r, center, pvi }, xScale, yScale) => {
+    ({ a, b, c, d, r, center, pvi, centerArc }, xScale, yScale) => {
       const cp = ([m, n]: number[]) => [xScale(m), yScale(n)];
       return {
         a: cp(a),
@@ -96,7 +98,8 @@ export const getΔ2Rad = CS<State, NN, NN>(
         d: cp(d),
         r: xScale(r),
         center: cp(center),
-        pvi: cp(pvi)
+        pvi: cp(pvi),
+        centerArc: cp(centerArc)
       };
     }
   ),
@@ -119,12 +122,6 @@ export const getΔ2Rad = CS<State, NN, NN>(
   getTangents = CS(
     getRoadPoints,
     ({ pvi, b, c }) => "M" + b + "L" + pvi + "L" + c
-  ),
-  getBlock = CS(
-    [get("Ms"), getRoadPointsRaw, getXScale, getYScale],
-    (Ms, { center: [cx, cy], r }, xScale, yScale) => {
-      return [xScale(cx), yScale(cy + r - Ms)];
-    }
   ),
   getCarRaw = CS([get("x"), getΔ2Rad, getRoadPointsRaw], (x, Δ2, rp) => {
     const sideLength = rp.side / Math.cos(Δ2);
@@ -179,23 +176,54 @@ export const getΔ2Rad = CS<State, NN, NN>(
       };
     }
   ),
+  // getBlock = CS(
+  //   [get("Ms"), getRoadPointsRaw, getXScale, getYScale],
+  //   (Ms, { center: [cx, cy], r }, xScale, yScale) => {
+  //     return [xScale(cx), yScale(cy + r - Ms)];
+  //   }
+  // ),
+  // getBlockPath = CS([getRoadPoints, getBlock], ({ centerArc }, block) => {
+  //   return "M" + centerArc + "L" + block;
+  // }),
+  getBlockPointsRaw = CS(
+    [get("Ms"), getRoadPointsRaw],
+    (Ms, { center: [cx, cy], r, centerArc }) => {
+      const blockY = cy + r - Ms;
+      const z = r * Math.sin(Math.acos((r - Ms) / r));
+      return {
+        chordStart: [cx - z, r - Ms + cy],
+        chordEnd: [cx + z, r - Ms + cy],
+        block: [cx, r - Ms + cy],
+        centerArc
+      };
+    }
+  ),
+  getBlockPoints = CS(
+    [getBlockPointsRaw, getXScale, getYScale],
+    ({ chordStart, chordEnd, block, centerArc }, xScale, yScale) => {
+      const cp = ([m, n]: number[]) => [xScale(m), yScale(n)];
+      return {
+        chordStart: cp(chordStart),
+        chordEnd: cp(chordEnd),
+        block: cp(block),
+        centerArc: cp(centerArc)
+      };
+    }
+  ),
+  getBlockPath = CS(
+    [getBlockPoints],
+    ({ chordStart, chordEnd, block, centerArc }) => {
+      return "M" + chordStart + "L" + chordEnd + "M" + centerArc + "L" + block;
+    }
+  ),
   getBraking = CS(
     [get("Ms"), getRoadPointsRaw, getCarRaw],
     (Ms, { center: [cx, cy], r }, { loc: [x, y] }) => {
       let δ = Math.acos((r - Ms) / r);
       let brakepoint = cx - r * Math.sin(δ);
       return x > brakepoint;
-      // return {
-      //   loc: [cx - r * Math.sin(δ), cy + r - Ms],
-      // };
     }
   );
-// getBraking = CS(
-//   [getStoppedCarRaw, getCarRaw],
-//   ({ loc: [xs, ys] }, { loc: [xc, yc] }) => {
-//     return xc > xs - params.W / 2;
-//   }
-// );
 
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
